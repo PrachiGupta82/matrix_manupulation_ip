@@ -31,18 +31,22 @@ module reverse_matrix #(parameter SIZE =4,
                            input out_tready,
                            output out_tvalid,
                            output out_tlast);
-                           
+   
+   //memory to store the input data                           
    reg [DATA_WIDTH-1:0] mem1 [0:SIZE-1][0:SIZE-1];     
    reg [DATA_WIDTH-1:0] mem2 [0:SIZE-1][0:SIZE-1];     
    
-   integer read_count_mem1, read_count_mem2, read_r_mem1, read_r_mem2;
+   // integers to keep the account of the number of data read from mem1 and mem2 
+   integer read_count_mem1, read_count_mem2;
    
+   // registers to store the input data, ready and valid signal 
    reg [DATA_WIDTH-1:0] L1_r_data;
    reg L1_r_tvalid;
    reg L1_r_tready;
    
    parameter half_size=DATA_WIDTH/2;
-      
+   
+   // integers to keep the track of index of data stored in the 2-D array internal memory mem1 and mem2.      
    integer i_1;
    integer j_1;
    integer i_2;
@@ -58,7 +62,8 @@ module reverse_matrix #(parameter SIZE =4,
    integer loop_num;
    integer out_count;
    
-   always@(posedge clk)                                                                                                 //  L1 stage
+      // registering the data in internal registers based on in_tready signal
+   always@(posedge clk)                                                                                                
     begin
         if(rst)
         begin
@@ -81,12 +86,15 @@ module reverse_matrix #(parameter SIZE =4,
         end
     end
 
+    // integer to count the number of data written the the internal memory block mem1 and mem2
     integer write_count1, write_count2;
     
-
+    // if mem1_ready is 0 then it is empty and ready to write the data in it. if its set then it is ready to be read
+    // if mem2_ready is 0 then it is empty and ready to write the data in it. if its set then it is ready to be read
     reg mem1_ready=0;
     reg mem2_ready=0;
     
+     // writing in memory mem1
     always@(posedge clk)                                                                                                        //writing in mem1  
     begin
         if(rst)
@@ -151,8 +159,8 @@ module reverse_matrix #(parameter SIZE =4,
         end
     end
 
-
-   always@(posedge clk)                                                                            //writing in mem2
+   //writing in mem2
+   always@(posedge clk)                                                                            
     begin
         if(rst)
         begin
@@ -162,7 +170,6 @@ module reverse_matrix #(parameter SIZE =4,
         end
         else 
         begin
-            //L4_r_tlast<=L3_r_tlast;
             if(sel_mem_wr && !mem2_ready)
             begin
                 if((i_2>=0) && L1_r_tready && L1_r_tvalid)
@@ -206,16 +213,17 @@ module reverse_matrix #(parameter SIZE =4,
     end
     
     
-
+// registers to store the previous status of mem1_ready and mem2_ready    
     reg reg_ready1;
     reg reg_ready2;
-    
+        
     always@(posedge clk)
     begin
         reg_ready1<=mem1_ready;
         reg_ready2<=mem2_ready;
     end
     
+  // to manupulate the sel_mem_wr register. if sel_mem_wr is 0 then input data will be written in mem1 or else in mem2  
     always@(posedge clk)
     begin
         if(rst)
@@ -224,45 +232,13 @@ module reverse_matrix #(parameter SIZE =4,
         begin
             if(((write_count1==count-1) || (write_count2==count-1)) && L1_r_tvalid && L1_r_tready)
                 sel_mem_wr<=!sel_mem_wr;
-//            else if((write_count1==0) || (write_count2==0))
-//                sel_mem_wr<=1'b0;
             else 
                 sel_mem_wr<=sel_mem_wr;
         end
     end
-    
-//    always@(posedge clk)
-//    begin
-//        if(rst)
-//            sel_mem_wr<=0;
-//        else
-//        begin
-//            if((loop_num==count-1) && L1_r_tvalid && L1_r_tready && !(mem1_ready && mem2_ready))
-//                sel_mem_wr<=!sel_mem_wr;
-////            else if(!mem1_ready && !mem2_ready && (loop_num==0))
-////                sel_mem_wr<=1'b0;
-//            else
-//                sel_mem_wr<=sel_mem_wr;
-//        end
-//    end
-    
-    always@(posedge clk)
-    begin
-        if(rst)
-        begin
-            read_r_mem1<=0;
-            read_r_mem2<=0;
-        end
-        else
-        begin
-            if(out_tready)
-            begin
-                read_r_mem1<=read_count_mem1;
-                read_r_mem2<=read_count_mem2;
-            end
-        end
-    end
-    
+
+
+    // to manupulate ready signal for mem1    
     always@(posedge clk)
     begin
         if(rst)
@@ -280,6 +256,7 @@ module reverse_matrix #(parameter SIZE =4,
         end
     end
     
+        // to manupulate ready signal for mem2
     always@(posedge clk)
     begin
         if(rst)
@@ -296,7 +273,8 @@ module reverse_matrix #(parameter SIZE =4,
                 mem2_ready<=mem2_ready;
         end
     end
-    
+   
+   // integers to keep the track of the index number of the memory from where the data is read     
    integer k1;
    integer l1;
    integer k2;
@@ -308,6 +286,8 @@ module reverse_matrix #(parameter SIZE =4,
    reg [DATA_WIDTH-1:0] r_out_tdata1;
    reg [DATA_WIDTH-1:0] r_out_tdata2;
    
+// to manupulate the sel_mem_rd register.
+// if sel_mem_rd is 0 and mem1_ready is set then output data will be read from mem1 or else if sel_mem_rd is set and mem1_ready is also set then output data will be read from mem2   
    always@(posedge clk)
    begin
     if(rst)
@@ -323,18 +303,13 @@ module reverse_matrix #(parameter SIZE =4,
             else
                 sel_mem_rd<=sel_mem_rd;
         end
-//        if(mem1_ready && (read_count_mem1==0) && mem2_ready && (read_count_mem2==0))
-//            sel_mem_rd<=sel_mem_rd;
-//        else if(mem1_ready && (read_count_mem2==0))
-//            sel_mem_rd<=0;
-//        else if(mem2_ready && (read_count_mem1==0))
-//            sel_mem_rd<=1'b1;
     end
    end
    
    reg r_tlast1;
    
-   always@(posedge clk)                                                                                         // output from mem1 
+   // taking output from mem1 and generating the out_tlast signal
+   always@(posedge clk)                                                                                         
    begin
         if(rst)
         begin
@@ -382,10 +357,7 @@ module reverse_matrix #(parameter SIZE =4,
                     r_tlast1<=0;
                     r_out_tvalid1<=1'b1;
                     r_out_tdata1<=r_out_tdata1;
-//                    if(read_count_mem1==count-1)
-//                        read_count_mem1<=0;
-//                    else
-                        read_count_mem1<=read_count_mem1;
+                    read_count_mem1<=read_count_mem1;
                 end
                 
             end
@@ -399,8 +371,8 @@ module reverse_matrix #(parameter SIZE =4,
 
     reg r_tlast2;
 
-
-    always@(posedge clk)                                                                                         // output from mem2
+// taking output from mem1 and generating the out_tlast signal
+    always@(posedge clk)                                                                                         
    begin
         if(rst)
         begin
@@ -414,7 +386,6 @@ module reverse_matrix #(parameter SIZE =4,
         begin
             if(sel_mem_rd && mem2_ready)
             begin
-               // $display("--------------------------------------%t-----------------------", $time);
                 if((k2<(SIZE)) && out_tready)
                 begin
                     r_out_tvalid2<=1'b1;
@@ -444,16 +415,12 @@ module reverse_matrix #(parameter SIZE =4,
                 end
                 else if(out_tvalid && !out_tready)
                 begin
-                    //$display("----------------------------------------%t---------------------", $time);
                     k2<=k2;
                     l2<=l2;
                     r_tlast2<=1'b0;
                     r_out_tvalid2<=1'b1;
                     r_out_tdata1<=r_out_tdata1;
-//                    if(read_count_mem2==count-1)
-//                        read_count_mem2<=0;
-//                    else
-                        read_count_mem2<=read_count_mem2;
+		    read_count_mem2<=read_count_mem2;
                 end
                 
             end

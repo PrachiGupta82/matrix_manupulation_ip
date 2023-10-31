@@ -31,6 +31,7 @@
                            input out_tready,
                            output out_tvalid);
 
+// registers for internal counting 
 integer i=1;
 integer j=1;
  
@@ -38,8 +39,8 @@ reg  [DATA_WIDTH-1:0] in_r_tdata, out_r_tdata;
 reg in_r_tvalid;
 reg in_r_tready;
 reg out_r_tvalid;
-//reg in_r_tready_1;
 
+// register the input data, valid and ready signals in respective internal registers.
 always@(posedge clk)
 begin
     if(out_tready)
@@ -49,24 +50,22 @@ begin
         in_r_tready<=in_tready;
     end
 end
-                           
+
+// to check if the input data received is the lower triangular elements of input matrix or not and and if it is then sending them at the out_r_tdata register by making out_r_tvalid as  1                                                        
 always@(posedge clk)
 begin
     if(rst)
     begin
         i<=1;
         j<=1;
-        //in_r_tready_1<=1'b1;
         out_r_tdata<=32'd0;
         out_r_tvalid<=1'b0;
     end
     else
     begin
-        //out_r_tdata<=in_r_tdata;
         if(in_r_tvalid && in_r_tready && out_tready)
         begin
             out_r_tdata<=in_r_tdata;
-            //in_r_tready_1<=1'b1;
             if(i>=j)
                 out_r_tvalid<=1'b1;
             else
@@ -97,7 +96,6 @@ begin
                 out_r_tvalid<=1'b1;
             else
                 out_r_tvalid<=1'b0;
-            //in_r_tready_1<=1'b0;
             out_r_tdata<=out_r_tdata;
         end
         else
@@ -105,7 +103,6 @@ begin
             i<=i;
             j<=j;
             out_r_tvalid<=1'b0;
-           // in_r_tready_1<=1'b1;
         end
     end
 end

@@ -31,15 +31,17 @@ module upper_triangular #(parameter SIZE =4,
                            input out_tready,
                            output out_tvalid);
 
+// registers for internal counting 
 integer i=1;
 integer j=1;
  
+// register the input data, valid and ready signals in respective internal registers. 
 reg  [DATA_WIDTH-1:0] in_r_tdata, out_r_tdata;
 reg in_r_tvalid;
 reg in_r_tready;
 reg out_r_tvalid;
-//reg in_r_tready_1;
 
+// register the input data, valid and ready signals in respective internal registers.
 always@(posedge clk)
 begin
     if(out_tready)
@@ -49,7 +51,8 @@ begin
         in_r_tready<=in_tready;
     end
 end
-                           
+
+// to check if the input data received is the upper triangular elements of input matrix or not and if it is then sending them at the out_r_tdata register by making out_r_tvalid as  1                                                        
 always@(posedge clk)
 begin
     if(rst)
